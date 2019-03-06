@@ -1,0 +1,7 @@
+Place "lang_code.csv" "lang_code.py" which store people names data & rules
+ in the "algorithm/people" folder where "lang_code" is as ISO-639.1 classified.
+
+Place "lang_code.csv" "lang_code.py" which store place names data & rules
+ in the "algorithm/place" folder where "lang_code" is as ISO-639.1 classified.
+
+Place "people.json" and "place.json" in the "index/" folder.
