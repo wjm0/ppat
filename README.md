@@ -122,87 +122,35 @@ The frontend also needs a API to get all available cultures.
 ## Web Service Layer
 
 This layer resolve parameters from frontend and also format results from `Translator`s. Be aware of the initialization
- of it. When the web server starts, it should only read the Transliterature Table **once** for the best performance.
+ of it. When the web server starts, it should only read the Transliteration Table **once** for the best performance.
 
 ## Translator Layer
 
-The core and most complicated layer of PPAT.
-
-### Index Translator Method Solutions
-
-Because of some translations are conventional, though some are not very standardized, we use those translations in order
- to make it easier to search those names in search engines and reference articles.
-
-
-We have download and formatted the _Place Names Of The World_ and _Names Of The World People_ data into json files,
- which contain an array of objects that have _english_, _culture_ and _chinese_ attributes. We can load the file into
- Python objects when the engine starts. The typical class is shown below:
-
-```python
-class IndexTranslator:
-    def __init__(self):
-        pass
-
-    def search(self, keyword):
-        pass
+```
++----------------------+
+|                      |
+| Raw Input (UTF-8)    |
+|                      |
++-----------+----------+  +-----------+
+            |             |           |
+            +<------------+ By eSpeak |
+            |             |           |
++-----------v----------+  +-----------+
+|                      |
+| Phonetics (Optional) |
+|                      |
++-----------+----------+  +-----------+
+            |             |           |
+            +<------------+ By rules  |
+            |             |           |
++-----------v----------+  +-----------+
+|                      |
+|  Chinese Characters  +--> Post Processes ...
+|                      |
++----------------------+
 ```
 
-### Algorithm Translator Method Solutions
-
-When we translate the names that cannot find in the reference articles and search engines, manually we use the
- Transliteration Table to match each vowels and consonants to get a standardized translation. But the table is 
- **not** a simple Finite Automata as it contains a lot of transaction rules. We will analysis those rules from
- common cases to complicated ones.
-
-#### Common Cases Solution
-
-See this part of Germany transliteration table:
-
-
-| ------- | Consonants | b bb | p pp |
-| ------- | ---------- | ---- | ---- |
-| Vowels  | ---------- | 布   | 普    |
-| a aa ah | 阿         | 巴   | 帕    |
-
-
-1. If no charactors need to be scanned, program over. Scan the consonants row for a **longest** match. This can
- determine the column we choose, jump to 3. If cannot find any match, jump to 2.
-2. Scan the vowels column for a **longest** match. If find one, the cross cell of consonants column and the vowel row
- you match is the output. Drop what have been transliterated, jump to 1. Otherwise, raise an error.
-3. Scan the next few words to the matched consonant in the vowel column for a **longest** match. If find one, the cross
- cell of consonants column and the vowel row you match is the output. Drop what have been transliterated, jump to 1.
- Otherwise, raise an error.
-
-
-This algorithm can be simply implemented by a finite automata. But there are more rules you should follow
- **in and out of** the table.
-
-### Solutions of Table Rules
-
-Those rules are always marked in the tables so we call them _Table Rules_. Usually they can be marked out with special
- symbols so we can load them when our `AlgorithmTranslator` initialized. For example in the Germany Transliteration
- Table, some vowels only can be matched after a vowel, like `y`. And another example is that the same name can be
- translated for men and women, like `代` and `戴`.
-
-
-Out of loading process, we shall record the states such as "just match a consonant" or "at the end of the word" and
- so on. When `match` process are executed, we will check those conditions to determine which row/column to be matched
- or just raised an error.
-
-### Solutions of More Rules out of Tables
-
-There are more complicated and tricky rules out of the table, which are at the end of the Transliteration Table PDF.
- They are described by natural language so we can't simply make a special mark or make the `match` function more
- complicated. So we should write a another `lang_code.py` file contains `match` `before_match` `after_match` processes
- for each specialized language.
-
-
-In fact, some rules out of tables can be transmitted into the table. You should only write necessary rules in this file.
-
-### Rule Storage
-
-In order to manage the rules in a readable way, we store the data of rules into two separated files:
-
-- lang_code.csv: Store structured data of rules in a comma separated values file. So the rules can be read by machine
- and people
-- lang_code.py: Describe special rules that can't be stored in the csv file.
+According to transliteration tables, some languages have its phonetics system. We need to translate raw names input to
+ phonetic first and then translate phonetics to Chinese characters. See details in 
+ [Transliteration Rules](docs/transliteration_rules.md). And some processes that structured rules can't described are
+ listed in `.py` files.
