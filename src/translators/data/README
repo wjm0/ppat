@@ -1,7 +1,109 @@
-Place "lang_code.csv" "lang_code.py" which store people names data & rules
- in the "algorithm/people" folder where "lang_code" is as ISO-639.1 classified.
-
-Place "lang_code.csv" "lang_code.py" which store place names data & rules
- in the "algorithm/place" folder where "lang_code" is as ISO-639.1 classified.
+RULE & INDEX FILE PLACES
+===============
+Language transliteration rule files are under the folder where the "lang_code" prefix is as ISO-639.1 classified
+ and with the ".rule" postfix.
 
 Place "people.json" and "place.json" in the "index/" folder.
+
+All files must be UTF-8 encoded.
+
+
+RULE FILE DEFINITIONS
+===============
+
+All lines start with a dot "." indicate there is a start of a section. And no multiple sections allowed.
+Available sections are listed here:
+
+ .meta                                     Meta information of the rule, see more in META SECTION.
+ .to_phonetic                              Rules of translating words into phonetics.
+ .phonetics                                List of all consonants and vowels
+ .<consonants | vowels | transliteration> <places | people>
+                                           Rules of translating phonetics (or words) into Chinese. "Category" indicates
+                                           whether the rules are for names of "places" or "people".
+
+At the start of each line also supports comments by starting the line with "//".
+Multiple lines comment or comments at tails of lines are not supported.
+
+META SECTION
+===============
+
+e.g.
+
+ language_name = string: Name of the language to be transliterated by this rule.
+
+
+TO PHONETIC SECTION
+===============
+
+e.g.
+
+ out = predict(in)
+ out = lookup(in)
+ out = in
+
+This section contains either some key/value(string) pairs to present rules of translate words into phonetics
+ **or** a key/value(script) pair corresponding to a python function with **one** parameter named "in".
+This function must return a str type in python and handle all possible exceptions.
+This function should be stored in a "lang_code.py" file in "data/rule" directory.
+
+PHONETIC SECTION
+===============
+
+e.g.
+
+ consonants = B|P|D|T|G|K|V|W|F|Z|S|DH|TH|ZH|SH|JH|CH|H|HH|M|N|L|R|Y|G|K|H|NG
+ vowels     = AA|AE|AH|EY|ER|AX|IH|IY|AO|OW|UH|UW|UH|UW|AY|AW
+
+This section contains all consonants and vowels in this language. There are only 2 keys allowed -- "consonants" and
+ "vowels".
+The value of this section should be some phonetics separated by "|".
+
+RULE SECTION
+===============
+
+Section names should have the syntax:
+
+.<consonants | vowels | transliteration> <places | people>
+
+This section contains some key/value(string) pairs to present rules of transforming phonetics into coordinates of
+ chinese characters of the transliteration table.
+The <places | people> indicates whether this section are used for translating people names for places' names.
+
+1. <consonants | vowels> section:
+
+Each rule is on separate line, and has the syntax:
+
+ [<pre>)]<match>[(<post>] = <coord>
+
+<pre> and <post> are optional, used to define the prefix and postfix of the match should be. There are some special
+ symbols provided:
+
+ \C  Any consonants (1 or more)
+ \V  Any vowels     (1 or more)
+ ^   Start of the sequence
+ $   End of the sequence
+
+The <match> and <coord> fields are necessary parts. Each phonetic is separated by one space and each phonetics sequences
+ is separated by "|". And the <coord>'s value should be an integer represents the index of row/column of the <match>
+ on the transliteration table.
+
+e.g.
+
+ S | DH TH = 13
+
+2. <transliteration> section:
+
+This section contains some key/value(string) pairs to present rules of transforming coordinates into chinese
+ characters.
+The <places | people> indicates whether this section are used for translating people names for places' names.
+
+Each rule is on separate line, and has the syntax:
+
+ <coord_c>, <coord_v> = <chinese characters>
+
+e.g.
+
+ 9, 11  = 利（莉）
+
+The <coord_c>, <coord_v> fields represent the coordinate of chinese characters of the combination of consonants and/or
+ vowels on the transliteration table.

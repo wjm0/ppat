@@ -1,8 +1,13 @@
 from flask import Flask
 from flask_caching import Cache
 
+from translators.translator import IndexTranslator, AlgorithmTranslator
+
 app = Flask(__name__)
 cache = Cache(app, config={'CACHE_TYPE': 'redis'})
+
+index_translator = IndexTranslator()
+algorithm_translator = AlgorithmTranslator()
 
 
 def register_blueprints():

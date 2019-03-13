@@ -10,4 +10,4 @@ def index():
 
     :return:
     """
-    return Response()
+    return Response('index.html')
