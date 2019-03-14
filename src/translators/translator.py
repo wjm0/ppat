@@ -1,7 +1,7 @@
 import os
 import json
 import re
-import sys
+import importlib
 
 
 class IndexTranslator:
@@ -10,8 +10,10 @@ class IndexTranslator:
     """
 
     def __init__(self):
-        with open(os.path.join(sys.path[0], 'translators', 'data', 'index', 'people.json'), 'r') as people_json:
-            with open(os.path.join(sys.path[0], 'translators', 'data', 'index', 'places.json'), 'r') as place_json:
+        print('==========================================')
+        print('Initializing index translator...')
+        with open(os.path.join('.', 'translators', 'data', 'index', 'people.json'), 'r') as people_json:
+            with open(os.path.join('.', 'translators', 'data', 'index', 'places.json'), 'r') as place_json:
                 try:
                     print('Loading file "data/index/places.json" ... ', end='')
                     people_data = json.loads(people_json.read())
@@ -34,6 +36,7 @@ class IndexTranslator:
                         self.places_index[n['name']] = n
                     print('People names data indexed!')
                     print('Index Translator initialized successfully!')
+                    print('==========================================')
 
     def search(self, keyword):
         """
@@ -71,21 +74,25 @@ class NoRuleMatched(Exception):
         return 'NO RULE MATCHED. CHECK YOUR RULE FILES'
 
 
-
 class RuleTranslator:
     """
     Transliterating by rules
     """
     def __init__(self):
+        print('Initializing rule translator...')
         self.rules = {}
-        for file_path in os.listdir(os.path.join('.', 'data', 'rule')):
+        for file_path in os.listdir(os.path.join('.', 'translators', 'data', 'rule')):
             if os.path.splitext(file_path)[1] == '.rule':
-                print('Found rule file: {}...'.format(file_path), end='')
+                print('Found rule file: {} ... '.format(file_path), end='')
+                file_path = os.path.join('.', 'translators', 'data', 'rule', file_path)
                 with open(file_path, 'r') as rule_file:
                     print('loading...', end='')
                     self._load_rule(file_path, rule_file)
                     print('loaded!')
+        print('==========================================')
         print('All "*.rule" files in data/rule are loaded!')
+        print('==========================================')
+
 
     def _get_kv(self, line, line_number, lang_code):
         """
@@ -94,11 +101,11 @@ class RuleTranslator:
         :param line:
         :return: (k, v)
         """
-        items = re.split(r'[\s]*=[\s]*]', line, lang_code)
+        items = line.split('=')
 
         assert len(items) == 2, "Invalid key/value pair at line: {} \n in file: {}.rule".format(line_number, lang_code)
 
-        return items[0], items[1]
+        return items[0].rstrip(), items[1].lstrip().rstrip('\n')
 
     def _load_kv(self, line, current_section, line_number, lang_code):
         def parse_k_cv(k):  # Parse Key in Consonants/Vowels section: Get possible <pre> and <post>
@@ -126,17 +133,18 @@ class RuleTranslator:
                 print('at line {} in file {}.rule'.format(line_number, lang_code))
                 exit(1)
 
-            return pre, matches, post  # (<pre>, [<match1>, <match2>, ...], <post>)
+            # tuple is hashable while list is not.
+            return pre, tuple(matches), post  # (<pre>, [<match1>, <match2>, ...], <post>)
 
         def parse_k_t(k):  # Parse Key in Transliteration section: 'm, n' --> (m, n)
             m, n = 0, 0
-            for i in range(k):
+            for i in range(len(k)):
                 if k[i] == ',':
-                    m = int(k[0, i])
+                    m = int(k[0: i])
                     n = int(k[i + 1:].lstrip(' '))
                     break
-            assert m != 0 and n != 0, \
-                'Invalid key (not a <x, y> pair): {} in ".transliteration" section at line {} in file {}.py'\
+            assert m > 0 and n > 0, \
+                '"<{}>" pair should be greater than 0 in ".transliteration" section at line {} in file {}.py'\
                     .format(k, line_number, lang_code)
             return m, n
 
@@ -158,12 +166,12 @@ class RuleTranslator:
                     .format(current_section, line_number, lang_code)
                 self.rules[lang_code][current_section][parse_k_cv(k)] = int(v)
             elif current_section.startswith('transliteration'):
-                # k should be a digit
-                assert k.isdigit(), 'Key should be a digit in section "{}": line {} in file: {}.rule'\
+                # Key in this section should be a <k, v> pair
+                assert v is not '', 'Value should not be empty in section "{}": line {} in file: {}.rule'\
                     .format(current_section, line_number, lang_code)
                 self.rules[lang_code][current_section][parse_k_t(k)] = v
         except Exception as e:
-            print('Error {} while loading k/v in "{}" section at line {} in file: {}.rule' \
+            print('Error: {} while loading k/v in "{}" section at line {} in file: {}.rule' \
                   .format(str(e), current_section, line_number, lang_code))
             exit(1)
 
@@ -188,14 +196,14 @@ class RuleTranslator:
         current_section = ''
         line_number = 0
         lang_code = os.path.split(os.path.splitext(file_path)[0])[1]  # Get 'a' from '/c/d/a.rule'
-        self.rules[lang_code] = {}
-        available_sections = ('.phonetics',  # consonants + vowels
-                              '.consonants people',
-                              '.vowels people',
-                              '.transliteration people'
-                              '.consonants places',
-                              '.vowels places',
-                              '.transliteration places',
+        self.rules[lang_code] = {'meta': {}}
+        available_sections = ('phonetics',  # consonants + vowels
+                              'consonants people',
+                              'vowels people',
+                              'transliteration people',
+                              'consonants places',
+                              'vowels places',
+                              'transliteration places',
                               )
         for line in rule_file.readlines():  # this will **preserve** the \n at end of lines
             line_number += 1
@@ -211,8 +219,8 @@ class RuleTranslator:
                 k, v = self._get_kv(line, line_number, lang_code)
                 self._check_meta_k(k, line_number, lang_code)
                 self.rules[lang_code]['meta'][k] = v
-            elif current_section == 'to_phonetics':  # translate words to phonetics
-                if '.to_phonetics' not in self.rules[lang_code].keys():  # init 'to_phonetics' as a list
+            elif current_section == 'to_phonetics':  # rules for translating words to phonetics
+                if 'to_phonetics' not in self.rules[lang_code].keys():  # init 'to_phonetics' as a list
                     self.rules[lang_code]['to_phonetics'] = []
                 k, v = self._get_kv(line, line_number, lang_code)  # lines here will be 'out = in' or 'out = fun(in)'
                 if k == 'out' and v == 'in':  # just copy words
@@ -220,14 +228,16 @@ class RuleTranslator:
                 elif re.match(r'\w+\(in\)', v) is not None:
                     function_name = v.split('(')[0]  # Get the function name and import it dynamically
 
-                    assert os.path.exists(os.path.join('.', 'data', 'rule', lang_code + '.py')), \
-                        'No such file: {}.py in "data/rule/" for {} in ".to_phonetic" section' \
+                    assert os.path.exists(os.path.join('.', 'translators', 'data', 'rule', lang_code + '.py')), \
+                        'No such file: {}.py in "data/rule/" for {} in ".to_phonetics" section' \
                         ' at line {} in file: {}.rule'.format(lang_code, function_name, line_number, lang_code)
 
-                    self.rules[lang_code]['.to_phonetics'].append(
-                        __import__('data.rule.{}.{}'.format(lang_code, function_name)))
+                    self.rules[lang_code]['to_phonetics'].append(
+                        importlib.import_module('translators.data.rule.{}'.format(lang_code)
+                                                ).__getattribute__(function_name))
                 else:
-                    print('Error in ".to_phonetics" section at line {} in rule file: {}'.format(line_number, rule_file))
+                    print('Syntax Error in ".to_phonetics" section at line {} in rule file: {}'.format(line_number, rule_file))
+                    print('No "out = in" or syntax like "out = <func>(in)" detected.')
                     exit(1)
             elif current_section in available_sections:
                 self._load_kv(line, current_section, line_number, lang_code)

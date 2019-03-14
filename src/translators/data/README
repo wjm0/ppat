@@ -1,3 +1,9 @@
+TEXT TO CHINESE TRANSLITERATION
+===============
+This approach was inspired by a TTS project called _eSpeak_ so we use many thoughts and expression in it. In a
+ transliteration table we will see many **vowels** and **consonants** pairs and a few extra rules in natural language.
+ Most of these can be translate into structured descriptions, with witch we use for processing words of names.
+
 RULE & INDEX FILE PLACES
 ===============
 Language transliteration rule files are under the folder where the "lang_code" prefix is as ISO-639.1 classified
