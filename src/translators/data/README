@@ -109,10 +109,36 @@ Each rule is on separate line, and has the syntax:
 
 e.g.
 
+      0       1       2                     ...  9
+  +-------+-------+-------+-------+---------
+  |       |       |       |       |
+0 | 0, 0  | CONSO |   b   |   p   |   d     ...
+  |       |       |       |       |
+  +-----------------------------------------
+  |       |       |       |       |
+1 | VOWEL |       |       |       |
+  |       |       |       |       |
+  +-----------------------------------------
+  |  AA   |       |       |       |
+2 |  AE   |       |       |       |
+  |  AH   |       |       |       |
+  +-----------------------------------------
+  |       |       |       |       |
+  |  EY   |       |       |       |
+  |       |       |       |       |
+     .
+     .
+     .
+11                                              利（莉）
+
+And the cell <9, 11> should be represented as:
+
  9, 11  = 利（莉）
 
+
 The <coord_c>, <coord_v> fields represent the coordinate of chinese characters of the combination of consonants and/or
- vowels on the transliteration table.
+ vowels on the transliteration table. The coordinates <0, *> and <*, 0> for the first row and column are not permitted
+ in this section.
 
 We prepared a python script to generate <k, v> pairs for you:
 
