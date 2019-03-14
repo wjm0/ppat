@@ -81,6 +81,7 @@ class RuleTranslator:
     def __init__(self):
         print('Initializing rule translator...')
         self.rules = {}
+        self.l_rule = {}
         for file_path in os.listdir(os.path.join('.', 'translators', 'data', 'rule')):
             if os.path.splitext(file_path)[1] == '.rule':
                 print('Found rule file: {} ... '.format(file_path), end='')
@@ -92,7 +93,6 @@ class RuleTranslator:
         print('==========================================')
         print('All "*.rule" files in data/rule are loaded!')
         print('==========================================')
-
 
     def _get_kv(self, line, line_number, lang_code):
         """
@@ -108,17 +108,17 @@ class RuleTranslator:
         return items[0].rstrip(), items[1].lstrip().rstrip('\n')
 
     def _load_kv(self, line, current_section, line_number, lang_code):
-        def parse_k_cv(k):  # Parse Key in Consonants/Vowels section: Get possible <pre> and <post>
+        def parse_k_cv(_k):  # Parse Key in Consonants/Vowels section: Get possible <pre> and <post>
             pre, match, post = '', '', ''
-            for i in range(len(k)):
-                if k[i] == ')':
-                    pre = k[0: i]
-                elif k[i] == '(':
-                    post = k[i + 1:]
-            match = k.lstrip(pre + ')').rstrip(post + '(')
+            for i in range(len(_k)):
+                if _k[i] == ')':
+                    pre = _k[0: i]
+                elif _k[i] == '(':
+                    post = _k[i + 1:]
+            match = _k.lstrip(pre + ')').rstrip(post + '(')
             assert match is not '', \
                 'Invalid key (<match> not found): {} in "{}" section at line {} in file {}.py'\
-                    .format(current_section, k, line_number, lang_code)
+                    .format(current_section, _k, line_number, lang_code)
 
             matches = re.split(r'\s*[|]\s*', match)
 
@@ -136,16 +136,17 @@ class RuleTranslator:
             # tuple is hashable while list is not.
             return pre, tuple(matches), post  # (<pre>, [<match1>, <match2>, ...], <post>)
 
-        def parse_k_t(k):  # Parse Key in Transliteration section: 'm, n' --> (m, n)
+        def parse_k_t(_k):  # Parse Key in Transliteration section: 'm, n' --> (m, n)
             m, n = 0, 0
-            for i in range(len(k)):
-                if k[i] == ',':
-                    m = int(k[0: i])
-                    n = int(k[i + 1:].lstrip(' '))
+            for i in range(len(_k)):
+                if _k[i] == ',':
+                    m = int(_k[0: i])
+                    n = int(_k[i + 1:].lstrip(' '))
                     break
-            assert m > 0 and n > 0, \
-                '"<{}>" pair should be greater than 0 in ".transliteration" section at line {} in file {}.py'\
-                    .format(k, line_number, lang_code)
+            assert m > 0 and n > 0 and m * n > 1, \
+                'x, y in "<{}>" pair should be greater than 0 and not be 1 in the same time \
+                    in ".transliteration" section at line {} in file {}.py'\
+                        .format(_k, line_number, lang_code)
             return m, n
 
         try:
@@ -431,7 +432,7 @@ class RuleTranslator:
         """
         Outer interface, translate words into chinese characters in selected cultures.
         :param words:
-        :param lang_code: list: if empty, select all lang_codes.
+        :param lang_codes: list: if empty, select all lang_codes.
         :return:
         """
         assert isinstance(words, str) and isinstance(lang_codes, list)
