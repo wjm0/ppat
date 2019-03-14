@@ -17,10 +17,10 @@ class IndexTranslator:
                 try:
                     print('Loading file "data/index/places.json" ... ', end='')
                     people_data = json.loads(people_json.read())
-                    print('loaded.')
+                    print('OK.')
                     print('Loading file "data/index/people.json" ... ', end='')
                     place_data = json.loads(place_json.read())
-                    print('loaded.')
+                    print('OK.')
                 except json.JSONDecodeError as e:
                     print(str(e))
                     exit(1)
@@ -29,12 +29,14 @@ class IndexTranslator:
                     self.places_index = {}
 
                     # build indexes
+                    print('Indexing people names data ... ', end='')
                     for m in people_data:
                         self.people_index[m['name']] = m
-                    print('Places names data indexed!')
+                    print('OK.')
+                    print('Indexing places names data ... ', end='')
                     for n in place_data:
                         self.places_index[n['name']] = n
-                    print('People names data indexed!')
+                    print('OK.')
                     print('Index Translator initialized successfully!')
                     print('==========================================')
 
@@ -89,9 +91,9 @@ class RuleTranslator:
                 with open(file_path, 'r') as rule_file:
                     print('loading...', end='')
                     self._load_rule(file_path, rule_file)
-                    print('loaded!')
+                    print('OK.')
         print('==========================================')
-        print('All "*.rule" files in data/rule are loaded!')
+        print('All "*.rule" files in "data/rule/" are loaded!')
         print('==========================================')
 
     def _get_kv(self, line, line_number, lang_code):
@@ -108,33 +110,37 @@ class RuleTranslator:
         return items[0].rstrip(), items[1].lstrip().rstrip('\n')
 
     def _load_kv(self, line, current_section, line_number, lang_code):
+        """
+        Load Key/Value of a line
+        :param line:
+        :param current_section:
+        :param line_number:
+        :param lang_code:
+        :return:
+        """
         def parse_k_cv(_k):  # Parse Key in Consonants/Vowels section: Get possible <pre> and <post>
-            pre, match, post = '', '', ''
+            s_pre, s_pattern, s_post = '', '', ''
             for i in range(len(_k)):
                 if _k[i] == ')':
-                    pre = _k[0: i]
+                    s_pre = _k[0: i].strip()
                 elif _k[i] == '(':
-                    post = _k[i + 1:]
-            match = _k.lstrip(pre + ')').rstrip(post + '(')
-            assert match is not '', \
+                    s_post = _k[i + 1:].strip()
+            s_pattern = _k.lstrip(s_pre + ')').rstrip(s_post + '(').strip()  # remove pre and post to get middle pattern
+            assert s_pattern is not '', \
                 'Invalid key (<match> not found): {} in "{}" section at line {} in file {}.py'\
                     .format(current_section, _k, line_number, lang_code)
-
-            matches = re.split(r'\s*[|]\s*', match)
-
-            try:
-                pre.replace('\\C', self.rules[lang_code]['phonetics']['consonants'])   # replace \C to any consonants
-                post.replace('\\C', self.rules[lang_code]['phonetics']['consonants'])  # replace \C to any consonants
-                pre.replace('\\V', self.rules[lang_code]['phonetics']['consonants'])   # replace \V to any vowels
-                post.replace('\\V', self.rules[lang_code]['phonetics']['consonants'])  # replace \V to any vowels
-            except KeyError as e:
-                print(str(e))
-                print('.phonetics section should be ahead of .consonants and .vowels sections')
-                print('at line {} in file {}.rule'.format(line_number, lang_code))
-                exit(1)
-
+            # parse s_pre, s_match, s_post into list, tuple(list) and list
+            # parse s_match
+            _l_pattern = re.split(r'\s*[|]\s*', s_pattern)
+            l_pattern = []
+            for p in _l_pattern:
+                l_pattern.append(tuple(p.split(' ')))
+            tl_pattern = tuple(l_pattern)
+            # parse s_pre and s_post
+            t_pre = () if s_pre == '' else tuple(s_pre.split(' '))
+            t_post = () if s_post == '' else tuple(s_post.split(' '))
             # tuple is hashable while list is not.
-            return pre, tuple(matches), post  # (<pre>, [<match1>, <match2>, ...], <post>)
+            return t_pre, tl_pattern, t_post  # (<pre>, ([<match1>], [<match2>], ...), <post>)
 
         def parse_k_t(_k):  # Parse Key in Transliteration section: 'm, n' --> (m, n)
             m, n = 0, 0
@@ -160,7 +166,7 @@ class RuleTranslator:
                     'Invalid key (should be "consonants" or "vowels"): "{}" ' \
                     'in ".phonetics" section at line {} in file {}.py' \
                         .format(k, line_number, lang_code)
-                self.rules[lang_code][current_section][k] = '[' + v + ']+'
+                self.rules[lang_code][current_section][k] = v.split('|')
             elif current_section.startswith('consonants') or current_section.startswith('vowels'):
                 # v should be a digit
                 assert v.isdigit(), 'Value should be a digit in section "{}": line {} in file: {}.rule'\
@@ -233,9 +239,8 @@ class RuleTranslator:
                         'No such file: {}.py in "data/rule/" for {} in ".to_phonetics" section' \
                         ' at line {} in file: {}.rule'.format(lang_code, function_name, line_number, lang_code)
 
-                    self.rules[lang_code]['to_phonetics'].append(
-                        importlib.import_module('translators.data.rule.{}'.format(lang_code)
-                                                ).__getattribute__(function_name))
+                    self.rules[lang_code]['to_phonetics'] = \
+                        importlib.import_module('translators.data.rule.{}'.format(lang_code)).__getattribute__(function_name)
                 else:
                     print('Syntax Error in ".to_phonetics" section at line {} in rule file: {}'.format(line_number, rule_file))
                     print('No "out = in" or syntax like "out = <func>(in)" detected.')
@@ -247,73 +252,110 @@ class RuleTranslator:
                                                                                      line_number, rule_file))
                 exit(1)
 
-    def _check_pre(self, pre_phonetic, pre):
+    def _check_pre(self, pre_phonetic, pre_pattern):
         """
         Check whether pre_phonetic matches pre
-        :param pre_phonetic:
-        :param pre:
+        :param pre_phonetic: list e.g. ['AE', 'OW', 'O']
+        :param pre_pattern: list  e.g. ['^', 'AE', '@']
+                                    head <--------- tail
         :return: True if matched, else False
         """
-        assert isinstance(pre_phonetic, str)
-        assert isinstance(pre, str)
+        assert isinstance(pre_phonetic, list)
+        assert isinstance(pre_pattern, tuple) and len(pre_pattern) != 0
+        l_all_consonants = self.l_rule['phonetics']['consonants']
+        l_all_vowels = self.l_rule['phonetics']['vowels']
+        list(pre_pattern).reverse()
+        index = len(pre_phonetic)
+        for i in pre_pattern:
+            if i == '@' and pre_phonetic[index] not in l_all_consonants:  # Any Vowels
+                return False
+            if i == '&' and pre_phonetic[index] not in l_all_vowels:  # Any Consonants
+                return False
+            if i == '^' and index != 1:
+                return False
+            if i not in ['@', '&', '$'] and i != pre_phonetic[index]:
+                return False
+            index -= 1
+        return True
 
-        if re.match(pre, pre_phonetic):
-            return True
-        else:
-            return False
-
-    def _check_post(self, post_phonetic, post):
+    def _check_post(self, post_phonetic, post_pattern):
         """
-        Check whether post_phonetic matches post
-        :param post_phonetic:
-        :param post:
-        :return:
+        Check whether pre_phonetic matches pre
+        :param post_phonetic: list e.g. ['AE', 'OW', 'O']
+        :param post_pattern: list  e.g. ['AE', '@', '$']
+                                    head <--------- tail
+        :return: True if matched, else False
         """
-        assert isinstance(post_phonetic, str)
-        assert isinstance(post, str)
-
-        if re.match(post, post_phonetic):
-            return True
-        else:
-            return False
+        assert isinstance(post_phonetic, list)
+        assert isinstance(post_pattern, tuple) and len(post_pattern) != 0
+        l_all_consonants = self.l_rule['phonetics']['consonants']
+        l_all_vowels = self.l_rule['phonetics']['vowels']
+        index = 0
+        for i in post_pattern:
+            if i == '@' and post_phonetic[index] not in l_all_consonants:  # Any Vowels
+                return False
+            if i == '&' and post_phonetic[index] not in l_all_vowels:  # Any Consonants
+                return False
+            if i == '^' and index != (len(post_phonetic) - 1):
+                return False
+            if i not in ['@', '&', '^'] and i != post_phonetic[index]:
+                return False
+            index += 1
+        return True
 
     def _match(self, phonetic, start_index, rule):
         """
         Match a longest pattern in rule at the start index of phonetic
         If matched, return >=1.
         Else, return 0.
-        :param phonetic: a complete phonetic of a word
+        :param phonetic: a complete phonetic list of a word
         :param start_index: int: start index of the phonetic that need to match
         :param rule: self.rule[lang_code + category]
-        :return: (<value of the matched rule>, <length of pattern>)
+        :return: (<value of the matched rule>, <length of the matched pattern>)
         """
         assert isinstance(rule, dict)
         assert isinstance(start_index, int)
-        assert isinstance(phonetic, str)
+        assert isinstance(phonetic, list)
 
-        match_pattern = ''
-        match_index = 0
+        matched_rule_value = 0
+        pattern_len = 0  # value of the matched rule
 
-        for k in rule.keys():  # k = ('<pre>', [<match1>, <match2>, ...], '<post>'), v = 'str(int)'
+        def _match_len(l_string, l_patterns):
+            """
+            len of matching pattern
+
+            :param l_string:
+            :param l_patterns:
+            :return:
+            """
+            r = 0
+            # if len(l_patterns) > len(l_string), no need for match
+            if len(l_patterns) > len(l_string):
+                return 0
+            for i in range(len(l_patterns)):
+                if l_string[i] == l_patterns[i]:
+                    r += 1
+                else:
+                    return 0
+            return r
+
+        for k in rule.keys():  # k: ('<(pre)>', [<[match1]>, <[match2]>, ...], '<(post)>'), v: int
             pre = k[0]
-            post = k[1]
+            post = k[2]
 
-            for match in k[1]:
-                if phonetic[start_index:].startswith(match):
-                    if k[0]:  # Have <pre>
-                        if not self._check_pre(phonetic[0:start_index], pre):
-                            break  # invalid match, check next
-                    if k[2]:  # Have <post>
-                        if not self._check_post(phonetic[start_index + 1:], post):
-                            break  # invalid match, check next
+            for patterns in k[1]:  # <match>: ['', '', ...]
+                _pattern_len = _match_len(phonetic[start_index:], patterns)
+                if _pattern_len != 0:  # matched, check <pre> and <post>
+                    if len(k[0]) != 0 and not self._check_pre(phonetic[0:start_index], pre):  # Have <pre>
+                        break  # invalid match, check next
+                    if len(k[2]) != 0 and not self._check_post(phonetic[start_index + 1:], post):  # Have <post>
+                        break  # invalid match, check next
                     # <pre> and <post> are both satisfied, compare the match length
-                    if len(match) > len(match_pattern):
-                        match_pattern = match
-                        match_index = rule[k]
+                    if _pattern_len > pattern_len:
+                        pattern_len = _pattern_len
+                        matched_rule_value = rule[k]
 
-        assert match_index != 0, 'No match pattern: check your .rule file'
-
-        return match_index, len(match_pattern)
+        return matched_rule_value, pattern_len
 
     def _find(self, coord_c, coord_v, l_rule_t):
         """
@@ -332,32 +374,47 @@ class RuleTranslator:
             raise NoRuleMatched()
         return r
 
-    def __phonetics2chinese(self, _phonetics, category):
+    def __phonetics2chinese(self, phonetics, category):
         """
         Phonetic to chinese in the l_rule's category
-        :param _phonetics: a 1-layer list ['word1's phonetics', 'word2's phonetics', ...]
+
+        Match longest pattern in vowels column.
+         If matched,
+         find chinese at (1, coord_v).
+         start index ++
+         Else,
+         Match longest pattern in consonants row.
+         If matched,
+         Excepted the matched consonant
+         Match longest pattern in vowels column.
+         find chinese at (coord_c, coord_v)
+
+        :param phonetics: a 1-layer list ['AE', 'L', 'AA', 'X'] of one word
         :param category:
         :return:
         """
-        l_rule_c = self.l_rule['.consonants ' + category]       # .consonants      section's rules
-        l_rule_v = self.l_rule['.vowels ' + category]           # .vowels          section's rules
-        l_rule_t = self.l_rule['.transliteration ' + category]  # .transliteration section's rules
+        l_rule_c = self.l_rule['consonants ' + category]       # .consonants      section's rules
+        l_rule_v = self.l_rule['vowels ' + category]           # .vowels          section's rules
+        l_rule_t = self.l_rule['transliteration ' + category]  # .transliteration section's rules
 
         r = ''
-
         start_index = 0
-        for _phonetic in _phonetics:  # for 'phonetic (of one word)' in ['pho1', 'pho2', ...] (of words)
-            coord_v, p_len = self._match(_phonetic, start_index, l_rule_v)          # Match longest pattern in vowels column.
-            if coord_v:                                                             # If matched,
-                r += self._find(1, coord_v, l_rule_t)                               # find chinese at (1, coord_v).
-                start_index += p_len                                                # start index ++
-            else:                                                                   # Else,
-                coord_c, p_len = self._match(_phonetic, start_index, l_rule_c)      # Match longest pattern in consonants row.
-                if coord_c:                                                         # If matched,
-                    start_index += p_len                                            # Excepted the matched consonant
-                    coord_v, p_len = self._match(_phonetic, start_index, l_rule_v)  # Match longest pattern in vowels column.
+        while start_index != len(phonetics):
+            coord_v, p_len = self._match(phonetics, start_index, l_rule_v)
+            if coord_v:
+                r += self._find(1, coord_v, l_rule_t)
+                start_index += p_len
+            else:
+                coord_c, p_len = self._match(phonetics, start_index, l_rule_c)
+                if coord_c:
+                    start_index += p_len
+                    # the consonant is the last phonetic of the word, no need to check vowels
+                    if start_index == len(phonetics):
+                        r += self._find(coord_c, 1, l_rule_t)
+                        break
+                    coord_v, p_len = self._match(phonetics, start_index, l_rule_v)
                     if coord_v:
-                        r += self._find(coord_c, coord_v, l_rule_t)                 # find chinese at (coord_c, coord_v)
+                        r += self._find(coord_c, coord_v, l_rule_t)
                         start_index += p_len
                     else:
                         r += self._find(coord_c, 1, l_rule_t)
@@ -373,7 +430,7 @@ class RuleTranslator:
 
         {'.meta':
             {'language_name':''},
-         '.to_phonetic': [fun1, fun2, ...],
+         '.to_phonetic': func,
          '.consonants people': [rule1, rule2, ...],
          '.vowels people': [rule1, rule2, ...],
          '.transliteration people': [rule1, rule2, ...],
@@ -381,7 +438,7 @@ class RuleTranslator:
          '.vowels places': [rule1, rule2, ...],
          '.transliteration places': [rule1, rule2, ...],
         }
-        :param phonetics: list of phonetics -- [[], [], ...]
+        :param phonetics: list of phonetics -- [['AA', 'L', 'AE', 'X'], ['G', 'R', 'AE', 'N'], ...]
         :return:
 
         [                         <-- r
@@ -395,38 +452,26 @@ class RuleTranslator:
             },
             ...
         ]
+        """
+        return [{
+                'people': self.__phonetics2chinese(phonetic, 'people'),
+                'places': self.__phonetics2chinese(phonetic, 'places'),
+            } for phonetic in phonetics]
 
+    def _words2phonetics(self, func, words):
         """
 
-        r = []
-        for _phonetics in phonetics:
-            r.append({
-                'phonetics': ''.join(_phonetics),  # Full phonetics display
-                'people': self.__phonetics2chinese(_phonetics, 'people'),
-                'places': self.__phonetics2chinese(_phonetics, 'places'),
-            })
-        return r
+        :param func: a translation function
+        :param words: list e.g. ['Mike', 'Green']
+        :return: list
 
-    def _words2phonetics(self, funcs, words):
-        """
-
-        :param funcs: translation function
-        :param words: list
-        :return:
-
-        r1 ---> [
-        r2 --->     ['pho1', 'pho2', ...],  # gen by func1
-        r2 --->     ['pho3', 'pho4', ...],  # gen by func2
+        r ----> [
+                    ['AH', 'L', 'AE', 'X'], <------ gen by funcs(words[0])
+                    ['G', 'R', 'E', 'N'],   <------ gen by funcs(words[1])
                     ...
                 ]
         """
-        r1 = []
-        for func in funcs:
-            r2 = []
-            for word in words:
-                r2.append(func(word))
-            r1.append(r2)
-        return r1
+        return [func(w) for w in words]
 
     def translate(self, words, lang_codes):
         """
@@ -457,7 +502,7 @@ class RuleTranslator:
             result = {'lang_code': _lang_code, 'transliterations': {}}  # store result for lang_code
 
             # to phonetics
-            phonetics = self._words2phonetics(self.l_rule['.to_phonetics'], words)  # 2-layer list
+            phonetics = self._words2phonetics(self.l_rule['to_phonetics'], _words)  # return: 2-layer list
 
             result['transliterations'] = self._phonetics2chinese(phonetics)
             results.append(result)

@@ -21,7 +21,7 @@ All lines start with a dot "." indicate there is a start of a section. And no mu
 Available sections are listed here:
 
  .meta                                     Meta information of the rule, see more in META SECTION.
- .to_phonetic                              Rules of translating words into phonetics.
+ .to_phonetic                              Rule of translating words into phonetics.
  .phonetics                                List of all consonants and vowels
  .<consonants | vowels | transliteration> <places | people>
                                            Rules of translating phonetics (or words) into Chinese. "Category" indicates
@@ -84,10 +84,10 @@ Each rule is on separate line, and has the syntax:
 <pre> and <post> are optional, used to define the prefix and postfix of the match should be. There are some special
  symbols provided:
 
- \C  Any consonants (1 or more)
- \V  Any vowels     (1 or more)
- ^   Start of the sequence
- $   End of the sequence
+ &   Any consonants (only one)
+ @   Any vowels     (only one)
+ ^   Start of the word (Must be at the start of <pre>)
+ $   End of the word (Must be at the end of <post>)
 
 The <match> and <coord> fields are necessary parts. Each phonetic is separated by one space and each phonetics sequences
  is separated by "|". And the <coord>'s value should be an integer represents the index of row/column of the <match>
