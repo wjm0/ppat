@@ -113,3 +113,12 @@ e.g.
 
 The <coord_c>, <coord_v> fields represent the coordinate of chinese characters of the combination of consonants and/or
  vowels on the transliteration table.
+
+We prepared a python script to generate <k, v> pairs for you:
+
+def gen_coord(m, n):
+    assert m > 0 and n > 0, 'm and n need to be integers greater than 0'
+    max_spaces = len(str(m)) + len(str(n))
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            print(str(i)+', '+str(j)+' '*(max_spaces-len(str(i))-len(str(j)))+' = ')
