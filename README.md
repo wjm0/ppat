@@ -7,7 +7,7 @@ This project is aimed to translate the names automatedly but accurately. CLI mod
 
 ## Getting Started
 
-This project runs in Python 3.6/7 and the required packages are listed in `src/requirements.txt`.
+For running this project you need a Python 3.6/7 installed and the requisites are listed in `src/requirements.txt`.
 
 ## Usage
 
@@ -30,19 +30,12 @@ Check our demo website at <https://ppat.enderqiu.cn>.
 ...
 ```
 
-## Authors
+## Supported Languages
 
-- [EnderQIU](https://github.com/EnderQIU)
+- English
 
-## License
-
-This project is open-sourced under the GPL v3 License.
-
-## About Copyright
-
-1. No copyright infringement intended.
-2. If there is a copyright violation content, please e-mail <a934560824@163.com> to delete.
-3. No money is being made of this project.
+You can add and customize transliterating rules following the instructions in 
+[Transliteration Rules](src/translators/data/README).
 
 ## Structure
 
@@ -88,13 +81,13 @@ This project is open-sourced under the GPL v3 License.
 ```
 +----------------------+
 |                      |
-| Raw Input (UTF-8)    |
+| Raw Input (Words)    |
 |                      |
-+-----------+----------+  +------------+
-            |             |            |
-            +<------------+ big_phoney |
-            |             |            |
-+-----------v----------+  +------------+
++-----------+----------+  +-------------+
+            |             |             |
+            +<------------+.to_phonetics|
+            |             |             |
++-----------v----------+  +-------------+
 |                      |
 | Phonetics (Optional) |
 |                      |
@@ -109,7 +102,22 @@ This project is open-sourced under the GPL v3 License.
 +----------------------+
 ```
 
-According to transliteration tables, some languages have phonetics system. For them we need to translate raw names
- input to phonetic at first and then translate phonetics to Chinese characters. See process details in 
- [Transliteration Rules](src/translators/data/README). And some processes that structured rules can't described are
- listed in `.py` files.
+According to transliteration tables, some languages have their own pronunciation system, for which we need to translate
+ raw words input to phonetics at first and then translate phonetics to Chinese characters. See more process details in 
+ [Transliteration Rules](src/translators/data/README). And some rules that can't implement on the table are written
+ in `*.py` files.
+
+
+## Authors
+
+- [EnderQIU](https://github.com/EnderQIU)
+
+## License
+
+This project is open-sourced under the GPL v3 License.
+
+## About Copyright
+
+1. No copyright infringement intended.
+2. If there is a copyright violation content, please e-mail <a934560824@163.com> to delete.
+3. No money is being made of this project.

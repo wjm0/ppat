@@ -1,10 +1,8 @@
 from flask import Flask
-from flask_caching import Cache
 
 from translators.translator import IndexTranslator, RuleTranslator
 
 app = Flask(__name__)
-cache = Cache(app, config={'CACHE_TYPE': 'redis'})
 
 index_translator = IndexTranslator()
 rule_translator = RuleTranslator()

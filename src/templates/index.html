@@ -2,13 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>PPAT</title>
 </head>
 <body>
-<form>
-    <label for="keyword">Keyword</label>
-    <input type="text" id="keyword" name="keyword">
-    <button type="submit">Search</button>
-</form>
+<div style="text-align: center;"><h1>People & Places Automate Translator</h1></div>
+<fieldset><legend>Source languages</legend>{% for lang_code in lang_codes.keys() %}
+    <label>{{ lang_codes[lang_code] }}<input type="checkbox" id="{{ lang_code }}" name="{{ lang_code }}" checked></label><br>
+{% endfor %}
+</fieldset>
+<fieldset><legend>Source name</legend>
+    <label for="keyword">Keyword<input type="text" id="keyword" name="keyword"></label>
+    <button type="button" onclick="submitd()">Search</button>
+</fieldset>
+<fieldset><legend>Results</legend><table><tr><td><table border="1">
+    <caption>From Indexes</caption>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Culture</th>
+        <th>People</th>
+        <th>Places</th>
+    </tr>
+    </thead>
+</table>
+</td><td><table border="1">
+    <caption>From Rules</caption>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Language</th>
+        <th>People</th>
+        <th>Places</th>
+    </tr>
+    </thead>
+</table>
+</td></tr>
+</table>
+</fieldset>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+<script>
+    function submitd() {
+        var lang_codes = [];
+        $('input:checkbox').each(function() {
+            if ($(this).attr('checked')) {
+                lang_codes.push($(this).attr('name'));
+            }
+        });
+        $.ajax({
+            url: '/api/translate',
+            method: 'POST',
+            data: {
+                keyword: $('#keyword').val(),
+                lang_codes: lang_codes
+            },
+            success: function (data) {
+                console.log(data)
+            }
+        });
+    }
+</script>
 </body>
+<footer>2019@<a href="https://github.com/EnderQIU/ppat">EnderQIU/ppat</a></footer>
 </html>
