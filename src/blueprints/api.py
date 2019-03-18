@@ -14,8 +14,6 @@ def translate():
     :return:
     """
     assert request.method == 'POST'
-    # keyword = request.data.form.get('keyword', '')
-    # lang_codes = request.data.form.get('lang_codes[]', []).split(',')
     keyword = request.json.get('keyword', '')
     lang_codes = request.json.get('lang_codes', '').split(',')
     try:
