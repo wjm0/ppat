@@ -27,7 +27,20 @@ Check our demo website at <https://ppat.enderqiu.cn>.
 # With requirements already installed
 > cd src/
 > python cli.py
-...
+... Loading dictionaries and rules
+> Alex
+Result:
+===================================================
+From dictionary:
+Keyword	Language	Category	Chinese
+Alex	法、美	Places	亚历克斯
+Alex	法、美	Places	亚历克斯
+---------------------------------------------------
+From rule:
+Keyword	Language	Category	Chinese
+Alex	English	Places	阿拉克斯（丝）
+===================================================
+> 
 ```
 
 ## Supported Languages

@@ -30,7 +30,7 @@ def lang_codes():
     Get all available language codes
     :return:
     """
-    r = {}
+    r = {'lang_codes': {}}
     for lang_code in rule_translator.rules.keys():
-        r[lang_code] = rule_translator.rules[lang_code]['meta']['language_name']
+        r['lang_codes'][lang_code] = rule_translator.rules[lang_code]['meta']['language_name']
     return Response(json.dumps(r))

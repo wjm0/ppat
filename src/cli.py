@@ -39,26 +39,16 @@ if __name__ == '__main__':
         lang_codes = []
         if len(line) == 2:
             lang_codes = line[1].lstrip().split(' ')
-        print('Result:\n=================')
+        print('Result:\n===================================================')
         print('From dictionary:')
         d_result = index_translator.search(words)
-        print('People:')
-        for k in d_result['people'].keys():
-            print(k)
-            print('{}\t{}\t{}'.format(d_result['people'][k]['name'],
-                                      d_result['people'][k]['culture'],
-                                      d_result['people'][k]['chinese']))
-        print('-----------------')
-        print('Places:')
-        for k in d_result['places'].keys():
-            print(k)
-            print('{}\t{}\t{}'.format(d_result['places'][k]['name'],
-                                      d_result['places'][k]['culture'],
-                                      d_result['places'][k]['chinese']))
-        print('-----------------')
+        print('Keyword\tLanguage\tCategory\tChinese')
+        for d_r in d_result['transliterations']:
+            print('{}\t{}\t{}\t{}'.format(d_r['keyword'], d_r['language'], d_r['category'], d_r['chinese']))
+        print('---------------------------------------------------')
         print('From rule:')
+        print('Keyword\tLanguage\tCategory\tChinese')
         r_result = rule_translator.translate(words, lang_codes)
-        for r_l in r_result:
-            print('Language:', r_l['lang_code'])
-            for t in r_l['transliterations']:
-                print('People:', t['people'], 'Places:', t['places'])
+        for d_r in r_result['transliterations']:
+            print('{}\t{}\t{}\t{}'.format(d_r['keyword'], d_r['language'], d_r['category'], d_r['chinese']))
+        print('===================================================')
