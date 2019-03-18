@@ -10,7 +10,7 @@ rule_translator = RuleTranslator()
 
 def register_blueprints():
     from blueprints.frontend import frontend_bp
-    from blueprints.api import  api_bp
+    from blueprints.api import api_bp
 
     app.register_blueprint(frontend_bp)
     app.register_blueprint(api_bp)

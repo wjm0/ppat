@@ -12,8 +12,8 @@ class IndexTranslator:
     def __init__(self):
         print('==========================================')
         print('Initializing index translator...')
-        with open(os.path.join('.', 'translators', 'data', 'index', 'people.json'), 'r') as people_json:
-            with open(os.path.join('.', 'translators', 'data', 'index', 'places.json'), 'r') as place_json:
+        with open(os.path.join('.', 'translators', 'data', 'index', 'people.json'), 'r', encoding='utf8') as people_json:
+            with open(os.path.join('.', 'translators', 'data', 'index', 'places.json'), 'r', encoding='utf8') as place_json:
                 try:
                     print('Loading file "data/index/places.json" ... ', end='')
                     people_data = json.loads(people_json.read())
@@ -88,7 +88,7 @@ class RuleTranslator:
             if os.path.splitext(file_path)[1] == '.rule':
                 print('Found rule file: {} ... '.format(file_path), end='')
                 file_path = os.path.join('.', 'translators', 'data', 'rule', file_path)
-                with open(file_path, 'r') as rule_file:
+                with open(file_path, 'r', encoding='utf8') as rule_file:
                     print('loading...', end='')
                     self._load_rule(file_path, rule_file)
                     print('OK.')
