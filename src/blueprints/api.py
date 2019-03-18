@@ -14,8 +14,10 @@ def translate():
     :return:
     """
     assert request.method == 'POST'
-    keyword = request.form.get('keyword', '')
-    lang_codes = request.form.get('lang_codes[]', []).split(',')
+    # keyword = request.data.form.get('keyword', '')
+    # lang_codes = request.data.form.get('lang_codes[]', []).split(',')
+    keyword = request.json.get('keyword', '')
+    lang_codes = request.json.get('lang_codes', '').split(',')
     try:
         r_result = rule_translator.translate(keyword, lang_codes)
     except Exception as e:
