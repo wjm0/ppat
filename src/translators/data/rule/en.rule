@@ -556,6 +556,10 @@ UH NG ($\C                               = 19
 26, 14 = 黄
 26, 19 = 洪
 
+.post people
+
+out = in
+
 .consonants places
 
 B         = 2
@@ -1066,3 +1070,7 @@ UH NG ($\C                               = 19
 26, 13 = 环
 26, 14 = 黄
 26, 19 = 洪
+
+.post places
+
+out = in

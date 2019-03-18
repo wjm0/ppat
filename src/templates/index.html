@@ -11,10 +11,11 @@
 {% endfor %}
 </fieldset>
 <fieldset><legend>Source name</legend>
-    <label for="keyword">Keyword<input type="text" id="keyword" name="keyword"></label>
+    <label for="keyword">Keyword<input type="text" id="keyword" name="keyword" onkeyup="this.value=this.value.replace(/\s+/g,'')"></label>
     <button type="button" onclick="submitd()" id="submit_button">Search</button>
 </fieldset>
-<fieldset><legend>Results</legend><table><tr><td><table border="1">
+<fieldset><legend>Results</legend>
+<table border="1">
     <caption>From Indexes</caption>
     <thead>
     <tr>
@@ -26,7 +27,7 @@
     </thead>
     <tbody id="index_result"></tbody>
 </table>
-</td><td><table border="1">
+<table border="1">
     <caption>From Rules</caption>
     <thead>
     <tr>
@@ -38,8 +39,7 @@
     </thead>
     <tbody id="rule_result"></tbody>
 </table>
-</td></tr>
-</table>
+
 </fieldset>
 <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
 <script>
@@ -54,16 +54,19 @@
         $.ajax({
             url: '/api/translate',
             method: 'POST',
+            timeout : 5000,
             data: {
                 keyword: $('#keyword').val(),
                 lang_codes: lang_codes
             },
             success: function (data) {
+                $("#submit_button").attr('disabled', false);
                 data = JSON.parse(data);
                 var index_result = data.index.transliterations;
                 var rule_result = data.rule.transliterations;
                 var index_table_str = "";
                 var rule_table_str = "";
+                if(rule_result === undefined) $("#index_result").html("NO RULE MATCHED");
                 for(var i=0;i<index_result.length;i++){
                     index_table_str += "<tr>";
                     index_table_str += "<td>" + index_result[i].keyword + "</td>";
@@ -73,6 +76,7 @@
                     index_table_str += "</tr>";
                 }
                 $("#index_result").html(index_table_str);
+                if(rule_result === undefined) $("#rule_result").html("NO RULE MATCHED");
                 for(i=0;i<rule_result.length;i++){
                     rule_table_str += "<tr>";
                     rule_table_str += "<td>" + rule_result[i].keyword + "</td>";
@@ -82,7 +86,13 @@
                     rule_table_str += "</tr>";
                 }
                 $("#rule_result").html(rule_table_str);
+            },
+            complete : function(XMLHttpRequest,status){
                 $("#submit_button").attr('disabled', false);
+　　　　         if(status === 'timeout' || status === 'error') {
+                    ajaxTimeoutTest.abort();
+                    alert(status + ' NO RULE MATCHED');
+                }
             }
         });
     }

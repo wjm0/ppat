@@ -31,11 +31,17 @@ class IndexTranslator:
                     # build indexes
                     print('Indexing people names data ... ', end='')
                     for m in people_data:
-                        self.people_index[m['name']] = m
+                        if self.people_index.__contains__(m['name']):
+                            self.people_index[m['name']].append(m)
+                        else:
+                            self.people_index[m['name']] = [m]
                     print('OK.')
                     print('Indexing places names data ... ', end='')
                     for n in place_data:
-                        self.places_index[n['name']] = n
+                        if self.places_index.__contains__(n['name']):
+                            self.places_index[n['name']].append(n)
+                        else:
+                            self.places_index[n['name']] = [n]
                     print('OK.')
                     print('Index Translator initialized successfully!')
                     print('==========================================')
@@ -51,22 +57,27 @@ class IndexTranslator:
         assert isinstance(keyword, str) and ' ' not in keyword
 
         keyword = keyword.capitalize()
-
-        result_template = {'keyword': keyword, 'language': '', 'chinese': '', 'category': ''}
         results = {'transliterations': []}
-
-        people_index_item = self.people_index.get(keyword, -1)
-        places_index_item = self.places_index.get(keyword, -1)
-        if people_index_item != -1:
-            result_template['language'] = people_index_item['culture']
-            result_template['chinese'] = people_index_item['chinese']
-            result_template['category'] = 'People'
-            results['transliterations'].append(result_template)
-        if places_index_item != -1:
-            result_template['language'] = places_index_item['culture']
-            result_template['chinese'] = places_index_item['chinese']
-            result_template['category'] = 'Places'
-            results['transliterations'].append(result_template)
+        people_index_items = self.people_index.get(keyword, -1)
+        places_index_items = self.places_index.get(keyword, -1)
+        if people_index_items != -1:
+            for people_index_item in people_index_items:
+                result = {
+                    'keyword': keyword,
+                    'category': 'People',
+                    'language': people_index_item['culture'],
+                    'chinese': people_index_item['chinese'],
+                }
+                results['transliterations'].append(result)
+        if places_index_items != -1:
+            for places_index_item in places_index_items:
+                result = {
+                    'keyword': keyword,
+                    'category': 'Places',
+                    'language': places_index_item['culture'],
+                    'chinese': places_index_item['chinese'],
+                }
+                results['transliterations'].append(result)
 
         return results
 
@@ -194,6 +205,33 @@ class RuleTranslator:
         assert k in self.available_meta_keys, \
             'Invalid key in ".meta" section at line {} in file: {}.rule'.format(line_number, lang_code)
 
+    def _load_func(self, section, line, lang_code, line_number, rule_file):
+        """
+        Load sections contain functions
+        :param section:
+        :param line:
+        :return:
+        """
+        if section not in self.rules[lang_code].keys():  # init 'section' as a list
+            self.rules[lang_code][section] = []
+        k, v = self._get_kv(line, line_number, lang_code)  # lines here will be 'out = in' or 'out = fun(in)'
+        if k == 'out' and v == 'in':  # just copy words
+            self.rules[lang_code][section] = lambda x: x
+        elif re.match(r'\w+\(in\)', v) is not None:
+            function_name = v.split('(')[0]  # Get the function name and import it dynamically
+
+            assert os.path.exists(os.path.join('.', 'translators', 'data', 'rule', lang_code + '.py')), \
+                'No such file: {}.py in "data/rule/" for {}() in ".{}" section' \
+                ' at line {} in file: {}.rule'.format(lang_code, function_name, section, line_number, lang_code)
+
+            self.rules[lang_code][section] = \
+                importlib.import_module('translators.data.rule.{}'.format(lang_code)).__getattribute__(function_name)
+        else:
+            print('Syntax Error in ".{}" section at line {} in rule file: {}'.format(section, line_number, rule_file))
+            print('"out = in" or syntax like "out = <func>(in)" expected.')
+            exit(1)
+
+
     def _load_rule(self, file_path, rule_file):
         """
         Load rules in "*.rule" file. Store it into self.rules
@@ -227,24 +265,9 @@ class RuleTranslator:
                 self._check_meta_k(k, line_number, lang_code)
                 self.rules[lang_code]['meta'][k] = v
             elif current_section == 'to_phonetics':  # rules for translating words to phonetics
-                if 'to_phonetics' not in self.rules[lang_code].keys():  # init 'to_phonetics' as a list
-                    self.rules[lang_code]['to_phonetics'] = []
-                k, v = self._get_kv(line, line_number, lang_code)  # lines here will be 'out = in' or 'out = fun(in)'
-                if k == 'out' and v == 'in':  # just copy words
-                    self.rules[lang_code]['to_phonetics'].append(lambda x: x)
-                elif re.match(r'\w+\(in\)', v) is not None:
-                    function_name = v.split('(')[0]  # Get the function name and import it dynamically
-
-                    assert os.path.exists(os.path.join('.', 'translators', 'data', 'rule', lang_code + '.py')), \
-                        'No such file: {}.py in "data/rule/" for {} in ".to_phonetics" section' \
-                        ' at line {} in file: {}.rule'.format(lang_code, function_name, line_number, lang_code)
-
-                    self.rules[lang_code]['to_phonetics'] = \
-                        importlib.import_module('translators.data.rule.{}'.format(lang_code)).__getattribute__(function_name)
-                else:
-                    print('Syntax Error in ".to_phonetics" section at line {} in rule file: {}'.format(line_number, rule_file))
-                    print('No "out = in" or syntax like "out = <func>(in)" detected.')
-                    exit(1)
+                self._load_func(current_section, line, lang_code, line_number, rule_file)
+            elif current_section.startswith('post'):
+                self._load_func(current_section, line, lang_code, line_number, rule_file)
             elif current_section in available_sections:
                 self._load_kv(line, current_section, line_number, lang_code)
             else:
@@ -410,6 +433,7 @@ class RuleTranslator:
         l_rule_c = self.current_rule['consonants ' + category]       # .consonants      section's rules
         l_rule_v = self.current_rule['vowels ' + category]           # .vowels          section's rules
         l_rule_t = self.current_rule['transliteration ' + category]  # .transliteration section's rules
+        l_func_p = self.current_rule['post ' + category]             # .post            section's function
 
         s_return = ''
         i_start = 0
@@ -434,7 +458,7 @@ class RuleTranslator:
                         s_return += self._find(coord_c, 1, l_rule_t)
                 else:
                     raise NoRuleMatched()
-        return s_return
+        return l_func_p(s_return)
 
     def _words2phonetics(self, func, keyword):
         """
@@ -479,21 +503,20 @@ class RuleTranslator:
             # Select rule for lang_code
             self.current_rule = self.rules[_lang_code]  # lang_code specified rule
 
-            result = {'language': self.current_rule['meta']['language_name'], 'keyword': keyword}
-
             # to phonetics
             l_phonetics = self._words2phonetics(self.current_rule['to_phonetics'], keyword)
 
-            # tranliterate
-            result_people = result
-            result_places = result
-            # people
-            result_people['category'] = 'People'
-            result_people['chinese'] = self._phonetics2chinese(l_phonetics, 'people')
-            # places
-            result_places['category']= 'Places'
-            result_places['chinese'] = self._phonetics2chinese(l_phonetics, 'places')
-            # add to results
-            results['transliterations'].append(result)
+            results['transliterations'].append({
+                'keyword': keyword,
+                'language': self.current_rule['meta']['language_name'],
+                'category': 'People',
+                'chinese': self._phonetics2chinese(l_phonetics, 'people'),
+            })
+            results['transliterations'].append({
+                'keyword': keyword,
+                'language': self.current_rule['meta']['language_name'],
+                'category': 'Places',
+                'chinese': self._phonetics2chinese(l_phonetics, 'places'),
+            })
 
         return results
