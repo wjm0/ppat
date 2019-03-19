@@ -55,10 +55,11 @@
             url: '/api/translate',
             method: 'POST',
             timeout : 10000,
-            data: {
+            data: JSON.stringify({                  
                 keyword: $('#keyword').val(),
                 lang_codes: lang_codes
-            },
+            }),
+            contentType: "application/json; charset=utf-8",
             success: function (data) {
                 $("#submit_button").attr('disabled', false);
                 data = JSON.parse(data);
