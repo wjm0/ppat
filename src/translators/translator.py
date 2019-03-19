@@ -294,7 +294,7 @@ class RuleTranslator:
                 return False
             if i == '&' and pre_phonetic[index] not in l_all_vowels:  # Any Consonants
                 return False
-            if i == '^' and index != 1:
+            if i == '$' and index != 1:
                 return False
             if i not in ['@', '&', '$'] and i != pre_phonetic[index]:
                 return False
