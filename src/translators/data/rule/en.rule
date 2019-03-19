@@ -77,13 +77,13 @@ AW                                       = 12
 // >>> phonetic_dict.lookup('sing')
 // 'S IH1 NG'
 
-AE N | AH N | AE NG                      = 13
-AA N | AW N | AH NG | AO N | AA NG ( $ & = 14
-EH N | EH NG | ER N | AX N | AX NG ( $ & = 15
-IH N | IY N | IY R N | Y AX N ($\C       = 16
-IH NG ($\C                               = 17
-UW N | UH N | OW N ( $ &                 = 18
-UH NG ($\C                               = 19
+AE N | AH N | AE NG                   = 13
+AA N | AW N | AH NG | AO N | AA NG (& = 14
+EH N | EH NG | ER N | AX N | AX NG (& = 15
+IH N | IY N | IY R N | Y AX N (&      = 16
+IH NG (&                              = 17
+UW N | UH N | OW N (&                 = 18
+UH NG (&                              = 19
 
 // <Coordination = ChineseCharacters> pair
 // You can use the following python script to generate coordinates:
@@ -600,24 +600,24 @@ H W       = 26
 
 .vowels places
 
-AA | AE | AH                             = 2
-EH                                       = 3
-EY                                       = 4
-ER | AX                                  = 5
-IY | IH                                  = 6
-AO                                       = 7
-OW                                       = 8
-UW                                       = 9
-Y UW | Y UH                              = 10
-AY                                       = 11
-AW                                       = 12
-AE N | AH N | AE NG                      = 13
-AA N | AW N | AH NG | AO N | AA NG ( $ & = 14
-EH N | EH NG | ER N | AX N | AX NG ( $ & = 15
-IH N | IY N | IY R N | Y AX N ($\C       = 16
-IH NG ($\C                               = 17
-UW N | UH N | OW N ( $ &                 = 18
-UH NG ($\C                               = 19
+AA | AE | AH                          = 2
+EH                                    = 3
+EY                                    = 4
+ER | AX                               = 5
+IY | IH                               = 6
+AO                                    = 7
+OW                                    = 8
+UW                                    = 9
+Y UW | Y UH                           = 10
+AY                                    = 11
+AW                                    = 12
+AE N | AH N | AE NG                   = 13
+AA N | AW N | AH NG | AO N | AA NG (& = 14
+EH N | EH NG | ER N | AX N | AX NG (& = 15
+IH N | IY N | IY R N | Y AX N (&      = 16
+IH NG (&                              = 17
+UW N | UH N | OW N (&                 = 18
+UH NG (&                              = 19
 
 .transliteration places
 

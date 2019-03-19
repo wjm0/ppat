@@ -83,8 +83,13 @@ class IndexTranslator:
 
 
 class NoRuleMatched(Exception):
+    def __init__(self, section, l_phonetics=None):
+        self.section = section
+        self.l_phonetics = l_phonetics
+
     def __str__(self):
-        return 'NO RULE MATCHED. CHECK YOUR RULE FILES'
+        return 'PHONECTIS: "{}"\n \
+            NO RULE MATCHED IN "{}" section. CHECK YOUR RULE FILES'.format(str(self.l_phonetics), self.section)
 
 
 class RuleTranslator:
@@ -290,9 +295,9 @@ class RuleTranslator:
         list(pre_pattern).reverse()
         index = len(pre_phonetic)
         for i in pre_pattern:
-            if i == '@' and pre_phonetic[index] not in l_all_consonants:  # Any Vowels
+            if i == '@' and pre_phonetic[index] not in l_all_vowels:  # Any Vowels
                 return False
-            if i == '&' and pre_phonetic[index] not in l_all_vowels:  # Any Consonants
+            if i == '&' and pre_phonetic[index] not in l_all_consonants:  # Any Consonants
                 return False
             if i == '$' and index != 1:
                 return False
@@ -315,9 +320,9 @@ class RuleTranslator:
         l_all_vowels = self.current_rule['phonetics']['vowels']
         index = 0
         for i in post_pattern:
-            if i == '@' and post_phonetic[index] not in l_all_consonants:  # Any Vowels
+            if i == '@' and post_phonetic[index] not in l_all_vowels:  # Any Vowels
                 return False
-            if i == '&' and post_phonetic[index] not in l_all_vowels:  # Any Consonants
+            if i == '&' and post_phonetic[index] not in l_all_consonants:  # Any Consonants
                 return False
             if i == '^' and index != (len(post_phonetic) - 1):
                 return False
@@ -371,7 +376,7 @@ class RuleTranslator:
                 if _pattern_len != 0:  # matched, check <pre> and <post>
                     if len(k[0]) != 0 and not self._check_pre(phonetic[0:i_start], pre):  # Have <pre>
                         break  # invalid match, check next
-                    if len(k[2]) != 0 and not self._check_post(phonetic[i_start + 1:], post):  # Have <post>
+                    if len(k[2]) != 0 and not self._check_post(phonetic[i_start + _pattern_len:], post):  # Have <post>
                         break  # invalid match, check next
                     # <pre> and <post> are both satisfied, compare the match length
                     if _pattern_len > pattern_len:
@@ -394,7 +399,7 @@ class RuleTranslator:
         try:
             s_return = l_rule_t[(coord_c, coord_v)]
         except KeyError:
-            raise NoRuleMatched()
+            raise NoRuleMatched('.transliteration')
         return s_return
 
     def _phonetics2chinese(self, l_phonetics, category):
@@ -457,7 +462,7 @@ class RuleTranslator:
                     else:
                         s_return += self._find(coord_c, 1, l_rule_t)
                 else:
-                    raise NoRuleMatched()
+                    raise NoRuleMatched('.consonants', l_phonetics)
         return l_func_p(s_return)
 
     def _words2phonetics(self, func, keyword):
