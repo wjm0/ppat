@@ -33,21 +33,27 @@ Result:
 ===================================================
 From dictionary:
 Keyword	Language	Category	Chinese
-Alex	法、美	Places	亚历克斯
+Alex	葡	People	阿莱士
+Alex		People	亚历克斯;亚历克丝(女名)(教名Alexander、Alexandrina的昵称)
 Alex	法、美	Places	亚历克斯
 ---------------------------------------------------
 From rule:
 Keyword	Language	Category	Chinese
+Alex	English	People	阿拉克斯（丝）
 Alex	English	Places	阿拉克斯（丝）
 ===================================================
-> 
+>
 ```
+
+Usually results from rules are quite different from those from dictionaries, for the reason
+ that some transliterations already exist are transliated by custom or tradition. We should
+ consider the former in higer privority than others.
 
 ## Supported Languages
 
 - English
 
-You can add and customize transliterating rules following the instructions in 
+You can add and customize transliterating rules following the instructions in
 [Transliteration Rules](src/translators/data/README).
 
 ## Structure
