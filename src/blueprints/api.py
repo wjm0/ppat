@@ -15,7 +15,7 @@ def translate():
     """
     assert request.method == 'POST'
     keyword = request.json.get('keyword', '')
-    lang_codes = request.json.get('lang_codes', '').split(',')
+    lang_codes = request.json.get('lang_codes', []).split(',')
     try:
         r_result = rule_translator.translate(keyword, lang_codes)
     except Exception as e:
