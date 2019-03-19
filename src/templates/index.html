@@ -57,7 +57,7 @@
             timeout : 10000,
             data: JSON.stringify({                  
                 keyword: $('#keyword').val(),
-                lang_codes: lang_codes
+                lang_codes: lang_codes.join(',')
             }),
             contentType: "application/json; charset=utf-8",
             success: function (data) {
