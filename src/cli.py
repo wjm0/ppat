@@ -6,6 +6,7 @@ import sys
 from translators.translator import IndexTranslator, RuleTranslator
 
 
+
 if __name__ == '__main__':
     print("""!!!Welcome to Places & People Automate Translator!!!
      /$$$$$$$  /$$$$$$$   /$$$$$$  /$$$$$$$$
